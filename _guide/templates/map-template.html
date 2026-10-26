@@ -1,0 +1,429 @@
+<!doctype html>
+<!--
+  HOW TO USE THIS TEMPLATE (for the AI)
+  1. Copy this file to MAP.html in the root of the second brain. Regenerating MAP.html is safe and needs no confirmation:
+     it is always rebuilt from the registries.
+  2. Replace ONLY the JSON inside the script element whose id is brain-data (near the end of the file), built from
+     _system/places.md and _system/flows.md:
+     - places: one per registry row. id = stable name; name = a short human label in the document language
+       (default: the id); kind = the main kind only (source | folder | destination); status = the first status word;
+       protected = true if the status cell contains "protected". Skip "archived" places unless the owner asks.
+     - flows: one per registry row (skip "retired" unless the owner asks). from/to = lists of place ids;
+       what, when, who, check, status.
+     - title (e.g., "Maria's second brain"), updated (today's date), columns (optional custom headers).
+     - labels: the interface text in the owner's document language. Keys: subtitle, legendSource, legendFolder,
+       legendDestination, legendPlanned, legendProtected, hidePlanned, showPlanned, showEverything, panelHint, noFlows,
+       from, to, updated, places, flows, active, planned, other, colSource, colFolder, colDestination, colLevel, unknown.
+       Omit for English.
+     - Write "<" inside JSON strings as \u003c.
+  3. Keep everything else unchanged. Columns are computed from the chain of flows; to pin a place to a column, add "level": N.
+  4. Check: open the file (or re-parse the JSON) and confirm the place and flow counts in the header match the registries,
+     and that no "unknown places" warning appears. Tell the owner to open MAP.html in a browser.
+     In chat mode, give the full file to save, or a text version instead.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My second brain map</title>
+<style>
+:root {
+  --bg: #f6f5f1; --surface: #ffffff; --ink: #1f2328; --muted: #6a6f76; --line: #d9d6cc;
+  --source: #2f6fde; --folder: #1f9d6b; --destination: #c7801a;
+  --edge: #9aa1ab; --edge-hi: #2f6fde; --chip: #eef1f6; --focus-bg: #fffbe8;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171a; --surface: #1e2125; --ink: #e8e6e1; --muted: #9aa0a8; --line: #33373d;
+    --source: #6d9dff; --folder: #45c08f; --destination: #e3a84b;
+    --edge: #5b626c; --edge-hi: #8fb4ff; --chip: #2a2e34; --focus-bg: #2b2a20;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15171a; --surface: #1e2125; --ink: #e8e6e1; --muted: #9aa0a8; --line: #33373d;
+  --source: #6d9dff; --folder: #45c08f; --destination: #e3a84b;
+  --edge: #5b626c; --edge-hi: #8fb4ff; --chip: #2a2e34; --focus-bg: #2b2a20;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+header { padding: 20px 16px 8px; max-width: 1600px; margin: 0 auto; }
+h1 { font-size: 24px; margin: 0 0 4px; }
+.sub { color: var(--muted); margin: 0 0 10px; }
+.meta { color: var(--muted); font-size: 13px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--muted); margin-top: 10px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend b { font-weight: 400; }
+.sw { width: 14px; height: 14px; border-radius: 3px; display: inline-block; border: 2px solid var(--line); }
+.sw.source { border-left: 5px solid var(--source); } .sw.folder { border-left: 5px solid var(--folder); }
+.sw.destination { border-left: 5px solid var(--destination); } .sw.planned { border-style: dashed; }
+.controls { margin-top: 10px; display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; }
+.controls button { font: inherit; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); cursor: pointer; }
+main { max-width: 1600px; margin: 0 auto; padding: 8px 16px 32px; display: grid; gap: 16px;
+  grid-template-columns: minmax(0, 1fr) 280px; align-items: start; }
+@media (max-width: 900px) { main { grid-template-columns: minmax(0, 1fr); } }
+.scroller { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.map { position: relative; display: flex; gap: 50px; padding: 16px 20px 28px; min-width: max-content; }
+.col { display: flex; flex-direction: column; gap: 12px; width: 172px; position: relative; z-index: 1; }
+.col h2 { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 2px; height: 16px; }
+.card { text-align: left; font: inherit; color: inherit; background: var(--surface); width: 100%;
+  border: 1px solid var(--line); border-left: 5px solid var(--folder); border-radius: 8px; padding: 8px 10px; cursor: pointer;
+  transition: opacity .15s, box-shadow .15s; }
+.card.source { border-left-color: var(--source); } .card.destination { border-left-color: var(--destination); }
+.card.planned, .card.paused { border-style: dashed; border-left-style: solid; opacity: .7; }
+.card.paused { filter: grayscale(1); }
+.card.building, .card.testing { border-style: dashed; border-left-style: solid; }
+.warn { color: #b3261e; }
+.card .n { font-weight: 600; font-size: 14px; display: block; }
+.card .h { color: var(--muted); font-size: 12px; display: block; margin-top: 2px; }
+.card .tags { margin-top: 4px; display: flex; gap: 4px; flex-wrap: wrap; }
+.tag { font-size: 11px; background: var(--chip); color: var(--muted); border-radius: 4px; padding: 0 5px; }
+.card:focus-visible { outline: 2px solid var(--edge-hi); outline-offset: 2px; }
+.card.hi { box-shadow: 0 0 0 2px var(--edge-hi); background: var(--focus-bg); opacity: 1; }
+.map.focusing .card:not(.hi):not(.rel) { opacity: .25; }
+svg.edges { position: absolute; inset: 0; pointer-events: none; z-index: 0; overflow: visible; }
+svg path { fill: none; stroke: var(--edge); stroke-width: 1.4; opacity: .55; }
+svg path.planned { stroke-dasharray: 6 5; } svg path.paused { stroke-dasharray: 2 4; }
+svg path.hi { stroke: var(--edge-hi); stroke-width: 2.4; opacity: 1; }
+.map.focusing svg path:not(.hi) { opacity: .08; }
+.elabel { position: absolute; z-index: 2; transform: translate(-50%, -50%); background: var(--surface); color: var(--ink);
+  border: 1px solid var(--edge-hi); border-radius: 6px; padding: 1px 6px; font-size: 11px; max-width: 160px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+aside { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; position: sticky; top: 12px; }
+aside h3 { margin: 0 0 4px; font-size: 17px; } aside .k { color: var(--muted); font-size: 13px; margin: 0 0 8px; }
+.flow { border-top: 1px solid var(--line); padding: 8px 0; font-size: 13px; }
+.flow b { display: block; font-size: 13px; }
+.flow .dir { color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.chip { background: var(--chip); border-radius: 4px; padding: 1px 6px; font-size: 12px; }
+.chip.when::before { content: "● "; color: var(--edge-hi); }
+.empty { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title"></h1>
+  <p class="sub" id="subtitle"></p>
+  <div class="meta" id="meta"></div>
+  <div class="legend">
+    <span><i class="sw source"></i><b data-l="legendSource">where information comes from</b></span>
+    <span><i class="sw folder"></i><b data-l="legendFolder">where it lands (folders)</b></span>
+    <span><i class="sw destination"></i><b data-l="legendDestination">where it goes out</b></span>
+    <span><i class="sw planned"></i><b data-l="legendPlanned">planned, paused or in progress (dashed)</b></span>
+    <span>🔒 <b data-l="legendProtected">protected</b></span>
+  </div>
+  <div class="controls">
+    <button id="togglePlanned" type="button"></button>
+    <button id="clearFocus" type="button"></button>
+  </div>
+</header>
+<main>
+  <div class="scroller"><div class="map" id="map"><svg class="edges" id="edges"></svg></div></div>
+  <aside id="panel"></aside>
+</main>
+
+<!--
+  DATA. The AI regenerates this block from _system/places.md and _system/flows.md.
+  places: id (stable name), name, kind (source | folder | destination), location, holds,
+          status (active | planned | paused | archived), protected (true/false), level (optional: pin a column)
+  flows:  id, from [place ids], to [place ids], what, when, who, check,
+          status (planned | building | testing | active | paused | retired)
+  labels (optional): interface text in the owner's language (see DEFAULT_LABELS in the script)
+-->
+<script id="brain-data" type="application/json">
+{
+  "title": "My second brain",
+  "updated": "YYYY-MM-DD",
+  "columns": [],
+  "places": [
+    {
+      "id": "voice",
+      "name": "Voice notes",
+      "kind": "source",
+      "location": "phone",
+      "holds": "Spoken ideas",
+      "status": "planned"
+    },
+    {
+      "id": "inbox",
+      "name": "Inbox",
+      "kind": "folder",
+      "location": "Inbox/",
+      "holds": "Everything new, before sorting",
+      "status": "active"
+    },
+    {
+      "id": "people",
+      "name": "People",
+      "kind": "folder",
+      "location": "People/",
+      "holds": "One file per person",
+      "status": "active"
+    },
+    {
+      "id": "archive",
+      "name": "Archive",
+      "kind": "folder",
+      "location": "Archive/",
+      "holds": "Nothing is deleted; it moves here",
+      "status": "active"
+    },
+    {
+      "id": "backlog",
+      "name": "Needs you",
+      "kind": "destination",
+      "location": "_system/BACKLOG.md",
+      "holds": "Decisions waiting for you",
+      "status": "active"
+    }
+  ],
+  "flows": [
+    {
+      "id": "voice-capture",
+      "from": [
+        "voice"
+      ],
+      "to": [
+        "inbox"
+      ],
+      "what": "spoken notes as text",
+      "when": "as you speak",
+      "who": "?",
+      "check": "none",
+      "status": "planned"
+    },
+    {
+      "id": "inbox-triage",
+      "from": [
+        "inbox"
+      ],
+      "to": [
+        "people",
+        "archive",
+        "backlog"
+      ],
+      "what": "items sorted to their place",
+      "when": "on demand",
+      "who": "AI assistant",
+      "check": "reads the summary",
+      "status": "planned"
+    }
+  ]
+}
+</script>
+
+<script>
+(function () {
+  let data;
+  try { data = JSON.parse(document.getElementById('brain-data').textContent); }
+  catch (err) { document.body.textContent = 'Map data error: ' + err.message + ' — ask your AI to regenerate this file.'; return; }
+  data.places = data.places || []; data.flows = data.flows || [];
+  const DEFAULT_LABELS = {
+    subtitle: 'Places are boxes. Flows are arrows. Hover or tap a place: its flows and their four labels appear in the panel.',
+    legendSource: 'where information comes from', legendFolder: 'where it lands (folders)', legendDestination: 'where it goes out',
+    legendPlanned: 'planned, paused or in progress (dashed)', legendProtected: 'protected',
+    hidePlanned: 'Hide planned', showPlanned: 'Show planned', showEverything: 'Show everything',
+    panelHint: 'Hover or tap a box to see the flows that pass through it.', noFlows: 'No flows yet.',
+    from: '← from', to: '→ to', updated: 'Updated', places: 'places', flows: 'flows', active: 'active', planned: 'planned', other: 'other',
+    colSource: 'Comes from', colFolder: 'Lands', colDestination: 'Goes out', colLevel: 'Level',
+    unknown: 'unknown places in flows'
+  };
+  const L = Object.assign({}, DEFAULT_LABELS, data.labels || {});
+  document.querySelectorAll('[data-l]').forEach(el => { el.textContent = L[el.dataset.l] || el.textContent; });
+  if (data.title) document.title = data.title;
+  data.places.forEach(p => { p.name = p.name || p.id; p.kind = String(p.kind || 'folder').split(/[\s,]+/)[0]; p.status = String(p.status || 'active').split(/[\s,]+/)[0]; });
+  const mapEl = document.getElementById('map'), svg = document.getElementById('edges'), panel = document.getElementById('panel');
+  let showPlanned = true, pinned = null;
+
+  document.getElementById('title').textContent = data.title || 'Second brain map';
+  document.getElementById('subtitle').textContent = data.subtitle || L.subtitle;
+  document.getElementById('togglePlanned').textContent = L.hidePlanned;
+  document.getElementById('clearFocus').textContent = L.showEverything;
+  panel.innerHTML = ''; { const e = document.createElement('p'); e.className = 'empty'; e.textContent = L.panelHint; panel.appendChild(e); }
+
+  function build() {
+    mapEl.querySelectorAll('.col, .elabel').forEach(n => n.remove());
+    svg.innerHTML = '';
+    const visible = s => s !== 'retired' && s !== 'archived' && (showPlanned || s !== 'planned');
+    const places = new Map();
+    data.places.filter(p => visible(p.status)).forEach(p => places.set(p.id, Object.assign({}, p, { ins: [], outs: [] })));
+    const edges = [], allIds = new Set(data.places.map(p => p.id)), unknown = new Set();
+    data.flows.forEach(f => [].concat(f.from || [], f.to || []).forEach(id => { if (!allIds.has(id)) unknown.add(id); }));
+    data.flows.filter(f => visible(f.status)).forEach(f => (f.from || []).forEach(a => (f.to || []).forEach(b => {
+      if (places.has(a) && places.has(b) && a !== b) {
+        const e = { flow: f, from: a, to: b }; edges.push(e);
+        places.get(a).outs.push(e); places.get(b).ins.push(e);
+      }
+    })));
+
+    const level = {};
+    function lv(id, seen) {
+      if (level[id] !== undefined) return level[id];
+      const p = places.get(id);
+      if (typeof p.level === 'number') return (level[id] = p.level);
+      if (seen.has(id)) return 0;
+      seen.add(id);
+      let m = -1; p.ins.forEach(e => { m = Math.max(m, lv(e.from, seen)); });
+      seen.delete(id);
+      let v = m + 1; if (v === 0 && p.kind !== 'source' && places.size > 1) v = 1;
+      return (level[id] = v);
+    }
+    places.forEach((_, id) => lv(id, new Set()));
+    const maxL = Math.max(0, ...Object.values(level));
+    const cols = Array.from({ length: maxL + 1 }, () => []);
+    places.forEach((p, id) => cols[level[id]].push(p));
+
+    const kindOrder = { source: 0, folder: 1, destination: 2 };
+    cols[0].sort((a, b) => ((kindOrder[a.kind] ?? 1) - (kindOrder[b.kind] ?? 1)) || a.name.localeCompare(b.name));
+    const pos = {};
+    cols[0].forEach((p, i) => pos[p.id] = i);
+    for (let l = 1; l <= maxL; l++) {
+      cols[l].forEach(p => {
+        const ps = p.ins.map(e => pos[e.from]).filter(v => v !== undefined);
+        p._bc = ps.length ? ps.reduce((a, b) => a + b, 0) / ps.length : 999;
+      });
+      cols[l].sort((a, b) => a._bc - b._bc || kindOrder[a.kind] - kindOrder[b.kind]);
+      cols[l].forEach((p, i) => pos[p.id] = i);
+    }
+
+    const headers = data.columns || []; const usedKinds = new Set();
+    const cards = {};
+    cols.forEach((col, l) => {
+      const c = document.createElement('div'); c.className = 'col';
+      const h = document.createElement('h2');
+      const counts = {}; col.forEach(p => counts[p.kind] = (counts[p.kind] || 0) + 1);
+      const major = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
+      const byKind = { source: L.colSource, folder: L.colFolder, destination: L.colDestination };
+      let label = headers[l];
+      if (!label && major && byKind[major] && !usedKinds.has(major)) { label = byKind[major]; usedKinds.add(major); }
+      h.textContent = label || (L.colLevel + ' ' + (l + 1));
+      c.appendChild(h);
+      col.forEach(p => {
+        const b = document.createElement('button'); b.type = 'button';
+        b.className = 'card ' + (p.kind || 'folder') + ' ' + (p.status || 'active');
+        b.setAttribute('aria-pressed', 'false');
+        const n = document.createElement('span'); n.className = 'n'; n.textContent = (p.protected ? '🔒 ' : '') + p.name; b.appendChild(n);
+        if (p.holds) { const h2 = document.createElement('span'); h2.className = 'h'; h2.textContent = p.holds; b.appendChild(h2); }
+        const tags = document.createElement('span'); tags.className = 'tags';
+        if (p.location) { const t = document.createElement('span'); t.className = 'tag'; t.textContent = p.location; tags.appendChild(t); }
+        if (p.status && p.status !== 'active') { const t = document.createElement('span'); t.className = 'tag'; t.textContent = p.status; tags.appendChild(t); }
+        b.appendChild(tags);
+        b.addEventListener('mouseenter', () => { if (!pinned) focus(p.id); });
+        b.addEventListener('mouseleave', () => { if (!pinned) unfocus(); });
+        b.addEventListener('focus', () => { if (!pinned) focus(p.id); });
+        b.addEventListener('click', () => { if (pinned === p.id) { pinned = null; unfocus(); } else { pinned = p.id; focus(p.id); } });
+        c.appendChild(b); cards[p.id] = b;
+      });
+      mapEl.appendChild(c);
+    });
+
+    const paths = [];
+    function draw() {
+      svg.innerHTML = '';
+      mapEl.querySelectorAll('.elabel').forEach(n => n.remove());
+      const base = mapEl.getBoundingClientRect();
+      svg.setAttribute('width', mapEl.scrollWidth); svg.setAttribute('height', mapEl.scrollHeight);
+      const pairCount = {};
+      paths.length = 0;
+      edges.forEach(e => {
+        const a = cards[e.from].getBoundingClientRect(), b = cards[e.to].getBoundingClientRect();
+        const key = e.from + '>' + e.to; const k = (pairCount[key] = (pairCount[key] || 0) + 1) - 1;
+        const off = k * 6;
+        let x1 = a.right - base.left, y1 = a.top + a.height / 2 - base.top + off;
+        let x2 = b.left - base.left, y2 = b.top + b.height / 2 - base.top + off;
+        let d, mid;
+        if (x2 > x1 + 10) {
+          const dx = Math.max(30, (x2 - x1) * 0.5);
+          d = `M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`;
+          mid = [(x1 + 3 * (x1 + dx) + 3 * (x2 - dx) + x2) / 8, (y1 + 3 * y1 + 3 * y2 + y2) / 8];
+        } else {
+          x2 = b.right - base.left; const drop = 60;
+          d = `M${x1},${y1} C${x1 + 50},${y1 + drop} ${x2 + 50},${y2 + drop} ${x2},${y2}`;
+          mid = [(x1 + 3 * (x1 + 50) + 3 * (x2 + 50) + x2) / 8, (y1 + 3 * (y1 + drop) + 3 * (y2 + drop) + y2) / 8];
+        }
+        const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        p.setAttribute('d', d); p.setAttribute('class', e.flow.status || 'active');
+        svg.appendChild(p); paths.push({ el: p, e, mid });
+      });
+      if (current) focus(current);
+    }
+
+    let current = null;
+    function focus(id) {
+      current = id; mapEl.classList.add('focusing');
+      mapEl.querySelectorAll('.elabel').forEach(n => n.remove());
+      Object.entries(cards).forEach(([cid, el]) => { el.classList.remove('hi', 'rel'); el.setAttribute('aria-pressed', String(cid === pinned)); });
+      cards[id].classList.add('hi');
+      const flowsIn = [], flowsOut = [];
+      paths.forEach(({ el, e, mid }) => {
+        const on = e.from === id || e.to === id;
+        el.classList.toggle('hi', on);
+        if (on) {
+          cards[e.from].classList.add('rel'); cards[e.to].classList.add('rel');
+          const r1 = cards[e.from].getBoundingClientRect(), r2 = cards[e.to].getBoundingClientRect();
+          if (Math.abs(r2.left - r1.right) < 140) { (e.to === id ? flowsIn : flowsOut).push(e); return; }
+          const lab = document.createElement('div'); lab.className = 'elabel';
+          lab.style.left = mid[0] + 'px'; lab.style.top = mid[1] + 'px';
+          lab.textContent = e.flow.what || e.flow.id; lab.title = e.flow.what || '';
+          mapEl.appendChild(lab);
+          (e.to === id ? flowsIn : flowsOut).push(e);
+        }
+      });
+      renderPanel(places.get(id), flowsIn, flowsOut);
+    }
+    function unfocus() {
+      current = null; mapEl.classList.remove('focusing');
+      mapEl.querySelectorAll('.elabel').forEach(n => n.remove());
+      Object.values(cards).forEach(el => { el.classList.remove('hi', 'rel'); el.setAttribute('aria-pressed', 'false'); });
+      paths.forEach(({ el }) => el.classList.remove('hi'));
+      panel.innerHTML = ''; const e0 = document.createElement('p'); e0.className = 'empty'; e0.textContent = L.panelHint; panel.appendChild(e0);
+    }
+    function renderPanel(p, ins, outs) {
+      panel.innerHTML = '';
+      const h = document.createElement('h3'); h.textContent = (p.protected ? '🔒 ' : '') + p.name; panel.appendChild(h);
+      const k = document.createElement('p'); k.className = 'k';
+      k.textContent = [p.kind, p.location, p.status].filter(Boolean).join(' · '); panel.appendChild(k);
+      if (p.holds) { const d = document.createElement('p'); d.textContent = p.holds; d.style.margin = '0 0 8px'; panel.appendChild(d); }
+      const add = (list, label, other) => {
+        const seen = new Set();
+        list.forEach(e => {
+          const key = e.flow.id + other(e); if (seen.has(key)) return; seen.add(key);
+          const f = e.flow, box = document.createElement('div'); box.className = 'flow';
+          const t = document.createElement('b'); t.textContent = f.what || f.id; box.appendChild(t);
+          const dir = document.createElement('span'); dir.className = 'dir';
+          dir.textContent = label + ' ' + (places.get(other(e)) || {}).name + ' · ' + f.id + (f.status && f.status !== 'active' ? ' (' + f.status + ')' : '');
+          box.appendChild(dir);
+          const chips = document.createElement('div'); chips.className = 'chips';
+          [['when', f.when], ['', f.who], ['', f.check ? '✓ ' + f.check : '']].forEach(([cls, v]) => {
+            if (!v) return; const c = document.createElement('span'); c.className = 'chip ' + cls; c.textContent = v; chips.appendChild(c);
+          });
+          box.appendChild(chips); panel.appendChild(box);
+        });
+      };
+      add(ins, L.from, e => e.from); add(outs, L.to, e => e.to);
+      if (!ins.length && !outs.length) { const e = document.createElement('p'); e.className = 'empty'; e.textContent = L.noFlows; panel.appendChild(e); }
+    }
+
+    const nP = data.places.length, nF = data.flows.length;
+    const act = data.flows.filter(f => (f.status || 'active') === 'active').length, plan = data.flows.filter(f => f.status === 'planned').length;
+    const meta = document.getElementById('meta');
+    meta.textContent = (data.updated ? L.updated + ' ' + data.updated + ' · ' : '') + nP + ' ' + L.places + ' · ' + nF + ' ' + L.flows +
+      ' (' + act + ' ' + L.active + ', ' + plan + ' ' + L.planned + (nF - act - plan ? ', ' + (nF - act - plan) + ' ' + L.other : '') + ')';
+    if (unknown.size) { const w = document.createElement('span'); w.className = 'warn'; w.textContent = ' · ⚠ ' + L.unknown + ': ' + Array.from(unknown).join(', '); meta.appendChild(w); }
+
+    requestAnimationFrame(draw);
+    window.onresize = () => requestAnimationFrame(draw);
+    window.__unfocus = unfocus;
+  }
+
+  document.getElementById('togglePlanned').addEventListener('click', e => {
+    showPlanned = !showPlanned; pinned = null;
+    e.target.textContent = showPlanned ? L.hidePlanned : L.showPlanned; build();
+  });
+  document.getElementById('clearFocus').addEventListener('click', () => { pinned = null; window.__unfocus && window.__unfocus(); });
+  build();
+})();
+</script>
+</body>
+</html>
