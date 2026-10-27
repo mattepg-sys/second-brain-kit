@@ -90,7 +90,16 @@ A personal **Telegram bot → Google Apps Script → Groq Whisper (transcription
 - Suggesting "use Claude on your phone while the computer is on" first, when the person had said the computer would be off.
 - Assuming a connector could modify files without testing it.
 
-## 12. Patterns that emerged (optional)
+## 12. What other builders shared (October 2026)
+
+When the kit was shared in a founders' community, several people described their own setups:
+- **Hermes Agent on a home server**, with the whole brain in a GitHub repository so it can be used from the laptop too; mail and calendar automations run by Claude or Hermes directly. They also recommended Hermes's desktop app.
+- **Hermes on a Hostinger VPS**: comfortable, but with "several limitations" until the setup is done in a more structured way; the model ran on a ~100 €/month Codex (ChatGPT Pro) plan, used almost to its limit.
+- **A custom agent built with Mastra** (a TypeScript framework) on a dedicated VPS: "without active workers or a cloud service, the loop never closes".
+
+The shared lesson: flows that run on their own need something always on. The kit covers the three levels (AI app, cloud script, always-on agent) in `always-on-agents-2026-10.md`.
+
+## 13. Patterns that emerged (optional)
 
 - **An improvement folder and chat** for ideas about the brain itself: `_guide/library/patterns/improvement-folder.md`.
 - **Contacts as a table plus a few cards**, for people with many contacts: `_guide/library/patterns/contacts-table.md`.

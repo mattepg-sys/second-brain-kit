@@ -36,6 +36,7 @@ A folder that turns any capable AI assistant into your guide for building a **se
 
 - AI tools that can open folders (e.g., Claude desktop app, OpenAI Codex, Gemini CLI, Cursor): best experience.
 - Chat-only assistants (ChatGPT, Gemini, Claude on web or phone): fully usable, with some copying of files.
+- For technical people: always-on agents (e.g., Hermes Agent on a home server or VPS) can run the same brain 24/7; the brain is plain Markdown with `AGENTS.md` rules and one `SKILL.md` per flow, which such agents read directly.
 
 Designed and tested mainly with Claude; written to work with any capable assistant.
 

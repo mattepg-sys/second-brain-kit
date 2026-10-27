@@ -106,6 +106,7 @@ Tip: on Claude Free (one custom slot) an MCP hub (Zapier MCP, Composio) can stan
 | **Windsurf** (renamed "Devin Desktop") | Light quota | Pro $20, Max $200 | [S] |
 | **Aider, Cline** (open source) | Free software; you pay the model API | Typical solo use $5–50/mo in API [S] | Need your own API key; Aider can use local models via Ollama (fully free) |
 | **OpenCode** | Open source, own key [U] | — | — |
+| **Hermes Agent** (Nous Research) | Open source (MIT); own API keys, or a ChatGPT/Codex subscription login | Nous Portal $20 / $100 / $200 per month, or pay-as-you-go [V, Oct 2026] | Desktop apps since June 2026; also runs 24/7 on a server with a messaging gateway and scheduled jobs. See `always-on-agents-2026-10.md` |
 
 Everything except Cowork and the Codex desktop app assumes comfort with a terminal or code editor.
 

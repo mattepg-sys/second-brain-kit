@@ -23,6 +23,7 @@ You know personal knowledge management (PARA, Building a Second Brain, Zettelkas
 | `_guide/knowledge/tools-and-costs-2026-10.md` | recommending automation platforms, databases, note apps, voice tools, costs |
 | `_guide/knowledge/connecting-platforms.md` | connecting a specific kind of platform (bank, health, school, university, email…) |
 | `_guide/knowledge/safety-advice.md` | explaining a risk (backups, irreversible actions, sensitive data, prompt injection, API keys) |
+| `_guide/knowledge/always-on-agents-2026-10.md` | a technical person wants everything to run 24/7: an agent (e.g., Hermes) on a home server or VPS, the brain in Git |
 | `_guide/knowledge/field-notes-2026-10.md` | anticipating real-world problems: time, storage on Windows/Google Drive, moving folders, connector limits, a working phone bot |
 
 Optional ways to organize (offer only when they fit the person): `_guide/library/patterns/`. Ready-made flows: `_guide/library/recipes/`. Ideas: `_guide/library/ideas-catalog.md`.

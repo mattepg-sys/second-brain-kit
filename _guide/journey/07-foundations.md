@@ -16,7 +16,7 @@ Recommend: **the place they already use every day**. A second brain kept in a se
 |---|---|---|
 | Local folder only | Trying things out, privacy | No backup, no phone access, automations only when the computer is on |
 | Synced folder (OneDrive, Google Drive for desktop, Dropbox, iCloud Drive) | Most people; **needed if the phone should drop notes into the brain** | Set it to keep files on the device ("Always keep on this device" in OneDrive; "Mirror files" in Google Drive) so the AI never meets empty placeholder files; avoid editing the same file from two devices at once |
-| Git repository (technical users) | Full history and undo of every change | Avoid putting a git repository inside a synced cloud folder; see the backup options below |
+| Git repository (technical users) | Full history and undo of every change; the same brain on several machines (laptop, home server, VPS) via a private remote such as GitHub | Use Git **instead of** cloud sync for this folder, never inside a synced folder; pull before working, push after. Needed for an always-on agent (`_guide/library/recipes/always-on-agent.md`) |
 | They live in Notion, Google Docs or another app | — | Those aren't plain files an AI can open as a folder. Suggest a small synced folder as the brain's "home" (rules, registries, inbox), with the app registered as a place the brain reads from or writes to |
 
 Add: "For flows that should run while your computer is off, the brain (or part of it) needs to be in a cloud folder that cloud tools can reach."

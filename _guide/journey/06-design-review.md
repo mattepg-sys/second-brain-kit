@@ -53,10 +53,14 @@ Storage decides which tools can reach the brain, so settle the direction here, b
 ```
 Must flows run with the computer off, or the phone drop notes into the brain?
 ├─ No  → a local folder, or a synced folder they already use (simplest)
-└─ Yes → a synced cloud folder, kept fully on the computer
-         ├─ Google Drive → "Mirror files" mode (streaming isn't readable by AI folder tools; check disk space)
-         ├─ OneDrive     → "Always keep on this device" on the brain folder
-         └─ Dropbox / iCloud → keep the folder downloaded (not online-only)
+└─ Yes → how much should run unattended?
+         ├─ A few flows → a synced cloud folder, kept fully on the computer, plus cloud tasks or a cloud script
+         │    ├─ Google Drive → "Mirror files" mode (streaming isn't readable by AI folder tools; check disk space)
+         │    ├─ OneDrive     → "Always keep on this device" on the brain folder
+         │    └─ Dropbox / iCloud → keep the folder downloaded (not online-only)
+         └─ Many flows, and chatting with the brain from the phone (technical people)
+              → the brain in a private Git repository + an always-on agent on a home server or VPS
+                (`_guide/knowledge/always-on-agents-2026-10.md`, recipe `always-on-agent.md`)
 Is the account a university or employer one?
 └─ Check it stays after graduation/leaving and that the admin allows AI apps; a personal account is usually safer
 Code projects?            → keep them outside the synced folder (disk or GitHub); the brain links to them

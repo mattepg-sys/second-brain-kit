@@ -380,6 +380,13 @@ A menu of flows people build into their second brains, grouped by life area. Use
 
 ## 11. Taking care of the system
 
+### ⭐ Always-on agent (technical)
+- **What:** an AI agent on a home server or VPS runs the scheduled flows and answers on Telegram, with the brain in a private Git repository shared with the laptop.
+- **Example:** (not Alex's setup; community members use Hermes Agent this way) asking "what did I promise Maria?" from the phone at night and getting the answer from `People/`.
+- **Tools:** Hermes Agent, or a custom agent (e.g., Mastra); a home machine or a VPS (Hostinger, Hetzner, DigitalOcean…). Recipe: `recipes/always-on-agent.md`.
+- **Cost:** server 0–25 €/month plus model usage (from a few € with API keys to 100 €+/month for heavy use).
+- **Path:** full
+
 ### Health check
 - **What:** a daily or weekly report of what the system can't fix by itself.
 - **Alex:** "2 inbox items older than a week; meeting-capture didn't run yesterday."
